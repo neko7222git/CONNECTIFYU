@@ -10,8 +10,8 @@
         <!-- DEDICATED STUDENT DASHBOARD (STUDENT VIEW) -->
         <!-- ========================================== -->
         
-        <!-- Welcome Banner -->
-        <div class="bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-700 text-white p-6 sm:p-8 rounded-3xl shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <!-- Welcome Banner (ITM GOI LMS Style) -->
+        <div class="bg-gradient-to-r from-itm-dark via-[#144943] to-itm-primary text-white p-6 sm:p-8 rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-itm-border/30">
             <div class="space-y-2">
                 <div class="inline-flex items-center space-x-2 bg-white/10 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm border border-white/20">
                     <i class="fa-solid fa-user-graduate text-amber-300"></i>
@@ -19,16 +19,16 @@
                     <span>&bull; {{ profile.roll_or_emp_id }}</span>
                 </div>
                 <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Namaste, {{ user.get_full_name|default:user.username }}!</h1>
-                <p class="text-xs sm:text-sm text-indigo-100 font-medium max-w-xl">
+                <p class="text-xs sm:text-sm text-itm-tutu font-medium max-w-xl">
                     {{ profile.department }} &bull; Track your campus event participation, verify attendance with anti-proxy selfie check-in, and provide mandatory event feedback.
                 </p>
             </div>
 
             <div class="flex flex-wrap items-center gap-3">
-                <a href="{% url 'student_events' %}" class="px-4 py-2.5 bg-white text-slate-900 hover:bg-slate-100 font-bold text-xs rounded-xl shadow-md transition flex items-center">
-                    <i class="fa-solid fa-compass mr-1.5 text-brand-600"></i>Explore Campus Events
+                <a href="{% url 'student_events' %}" class="px-4 py-2.5 bg-white text-itm-dark hover:bg-itm-tutu font-bold text-xs rounded-lg shadow-xs transition flex items-center">
+                    <i class="fa-solid fa-compass mr-1.5 text-itm-primary"></i>Explore Campus Events
                 </a>
-                <a href="{% url 'checkin' %}" class="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center">
+                <a href="{% url 'checkin' %}" class="px-4 py-2.5 bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs rounded-lg shadow-xs transition flex items-center">
                     <i class="fa-solid fa-qrcode mr-1.5"></i>Live QR Check-In
                 </a>
             </div>
@@ -135,35 +135,35 @@
         <!-- ================================================== -->
 
         <!-- Welcome & Designation Banner -->
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="bg-white p-6 rounded-xl border border-itm-snuff shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
             <div class="flex items-center space-x-4">
-                <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center text-2xl font-bold shadow-md shadow-brand-500/20">
+                <div class="w-14 h-14 rounded-xl bg-gradient-to-tr from-itm-dark to-itm-primary text-white flex items-center justify-center text-2xl font-bold shadow-xs">
                     <i class="fa-solid fa-user-shield"></i>
                 </div>
                 <div>
                     <div class="flex items-center space-x-2">
-                        <h1 class="text-2xl font-extrabold text-slate-900">{{ user.get_full_name|default:user.username }}</h1>
+                        <h1 class="text-2xl font-bold text-[#212529]">{{ user.get_full_name|default:user.username }}</h1>
                         <span class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider 
                             {% if role == 'DIRECTOR' %}bg-rose-100 text-rose-800 border border-rose-300
-                            {% elif role == 'DEAN_ACCOUNTS' or role == 'DEAN_ACADEMICS' %}bg-purple-100 text-purple-800 border border-purple-200
+                            {% elif role == 'DEAN_ACCOUNTS' or role == 'DEAN_ACADEMICS' %}bg-itm-tutu text-itm-plum border border-itm-border
                             {% elif role == 'DEAN_RESEARCH' or role == 'DEAN_STUDENT_WELFARE' %}bg-blue-100 text-blue-800 border border-blue-200
                             {% elif role == 'HOD' or role == 'REGISTRAR' %}bg-amber-100 text-amber-800 border border-amber-200
                             {% else %}bg-emerald-100 text-emerald-800 border border-emerald-200{% endif %}">
                             {{ profile.get_role_display|default:role }}
                         </span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1">
-                        Department / Office: <span class="font-medium text-slate-700">{{ profile.department|default:'Institutional Office' }}</span> &bull; 
-                        Emp ID: <span class="font-mono text-slate-700">{{ profile.roll_or_emp_id|default:'N/A' }}</span>
+                    <p class="text-xs text-itm-muted mt-1">
+                        Department / Office: <span class="font-medium text-slate-800">{{ profile.department|default:'Institutional Office' }}</span> &bull; 
+                        Emp ID: <span class="font-mono text-slate-800">{{ profile.roll_or_emp_id|default:'N/A' }}</span>
                     </p>
                 </div>
             </div>
 
             <div class="flex items-center space-x-3 w-full md:w-auto">
-                <a href="{% url 'create_proposal' %}" class="flex-1 md:flex-initial inline-flex items-center justify-center px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold rounded-xl shadow-sm shadow-brand-500/25 transition">
+                <a href="{% url 'create_proposal' %}" class="flex-1 md:flex-initial inline-flex items-center justify-center px-4 py-2.5 bg-itm-primary hover:bg-itm-dark text-white text-xs font-bold rounded-lg shadow-xs transition">
                     <i class="fa-solid fa-plus-circle mr-2"></i>New Event Proposal
                 </a>
-                <a href="{% url 'student_events' %}" class="flex-1 md:flex-initial inline-flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-sm font-semibold rounded-xl transition">
+                <a href="{% url 'student_events' %}" class="flex-1 md:flex-initial inline-flex items-center justify-center px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-[#313131] text-xs font-bold rounded-lg transition">
                     <i class="fa-solid fa-calendar-days mr-2 text-slate-500"></i>Published Events
                 </a>
             </div>
@@ -171,13 +171,13 @@
 
         <!-- KPI Metrics Row (Indian Rupee Currency ₹) -->
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
-                <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl font-bold">
+            <div class="bg-white p-5 rounded-xl border border-itm-snuff shadow-xs flex items-center space-x-4">
+                <div class="w-12 h-12 rounded-lg bg-itm-tutu text-itm-primary flex items-center justify-center text-xl font-bold">
                     <i class="fa-solid fa-file-signature"></i>
                 </div>
                 <div>
-                    <div class="text-2xl font-black text-slate-900">{{ stats.total_proposals }}</div>
-                    <div class="text-xs font-medium text-slate-500">Total Proposals Filed</div>
+                    <div class="text-2xl font-black text-[#212529]">{{ stats.total_proposals }}</div>
+                    <div class="text-xs font-medium text-itm-muted">Total Proposals Filed</div>
                 </div>
             </div>
 

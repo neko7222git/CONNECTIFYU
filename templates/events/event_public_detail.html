@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ proposal.title }} - Event Details - CEMS{% endblock %}
+{% block title %}{{ proposal.title }} - Event Details - CONNECTIFYU{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto space-y-6">
@@ -53,11 +53,11 @@
             <!-- Badges & Title -->
             <div class="space-y-3">
                 <div class="flex flex-wrap items-center gap-2">
-                    <span class="px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg border border-indigo-100">
+                    <span class="px-3 py-1 bg-itm-tutu text-itm-plum text-xs font-bold rounded-lg border border-itm-border">
                         {{ proposal.organizing_unit.name }}
                     </span>
                     <span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-lg border border-emerald-200 flex items-center">
-                        <i class="fa-solid fa-circle-check mr-1.5"></i>Institutional Approved & Published
+                        <i class="fa-solid fa-circle-check mr-1.5"></i>Institutional Approved &amp; Published
                     </span>
                     {% if proposal.published_at %}
                         <span class="text-xs text-slate-400">
@@ -126,7 +126,22 @@
             <hr class="border-slate-100">
 
             <!-- SECTION: Student Registration vs Campus Entity View -->
-            {% if is_student %}
+            {% if not user.is_authenticated %}
+                <!-- Unauthenticated Public Visitor View -->
+                <div class="p-6 bg-itm-tutu/50 rounded-xl border border-itm-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+                    <div class="space-y-1">
+                        <h4 class="font-bold text-[#212529] text-base flex items-center">
+                            <i class="fa-solid fa-id-card text-itm-primary mr-2"></i>Student Registration Required
+                        </h4>
+                        <p class="text-xs text-itm-muted">
+                            Enrolled students of INSTITUTE OF TECHNOLOGY AND MANAGEMENT must sign in with their institutional credentials to register.
+                        </p>
+                    </div>
+                    <a href="{% url 'login' %}?next={% url 'event_public_detail' proposal.id %}" class="px-5 py-2.5 bg-itm-primary hover:bg-itm-dark text-white text-xs font-bold rounded-lg shadow-xs transition flex items-center whitespace-nowrap">
+                        <i class="fa-solid fa-right-to-bracket mr-2"></i>Sign In to Register &rarr;
+                    </a>
+                </div>
+            {% elif is_student %}
                 <!-- STUDENT VIEW -->
                 {% if user_registration %}
                     <!-- Already Registered -->
@@ -160,12 +175,12 @@
                     </div>
                 {% else %}
                     <!-- Not Registered Yet: Single Registration Form -->
-                    <div class="p-6 bg-gradient-to-br from-indigo-50/70 to-brand-50/50 rounded-2xl border border-indigo-100 space-y-4">
+                    <div class="p-6 bg-itm-tutu/40 rounded-xl border border-itm-border space-y-4">
                         <div>
-                            <h4 class="font-black text-slate-900 text-base flex items-center">
-                                <i class="fa-solid fa-id-card text-brand-600 mr-2"></i>Register for this Event
+                            <h4 class="font-bold text-[#212529] text-base flex items-center">
+                                <i class="fa-solid fa-id-card text-itm-primary mr-2"></i>Register for this Event
                             </h4>
-                            <p class="text-xs text-slate-500 mt-0.5">
+                            <p class="text-xs text-itm-muted mt-0.5">
                                 Institutional rules: Each student may register only once. Choose your engagement role below.
                             </p>
                         </div>
@@ -173,31 +188,31 @@
                         <form method="POST" action="{% url 'event_register' proposal.id %}" class="space-y-4">
                             {% csrf_token %}
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-2">Select Your Role</label>
+                                <label class="block text-xs font-bold text-[#313131] mb-2">Select Your Role</label>
                                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                    <label class="relative flex flex-col p-4 bg-white border-2 border-slate-200 rounded-xl cursor-pointer hover:border-brand-500 transition has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50/30">
+                                    <label class="relative flex flex-col p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-itm-primary transition has-[:checked]:border-itm-primary has-[:checked]:bg-itm-tutu/50">
                                         <input type="radio" name="role" value="PARTICIPANT" checked class="sr-only">
-                                        <span class="font-bold text-xs text-slate-900 mb-1">Participant</span>
-                                        <span class="text-[11px] text-slate-500">Attend workshops, lectures, hands-on sessions.</span>
+                                        <span class="font-bold text-xs text-[#212529] mb-1">Participant</span>
+                                        <span class="text-[11px] text-itm-muted">Attend workshops, lectures, hands-on sessions.</span>
                                     </label>
-                                    <label class="relative flex flex-col p-4 bg-white border-2 border-slate-200 rounded-xl cursor-pointer hover:border-brand-500 transition has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50/30">
+                                    <label class="relative flex flex-col p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-itm-primary transition has-[:checked]:border-itm-primary has-[:checked]:bg-itm-tutu/50">
                                         <input type="radio" name="role" value="VOLUNTEER" class="sr-only">
-                                        <span class="font-bold text-xs text-slate-900 mb-1">Student Volunteer</span>
-                                        <span class="text-[11px] text-slate-500">Assist organizing committee with crowd & logistics.</span>
+                                        <span class="font-bold text-xs text-[#212529] mb-1">Student Volunteer</span>
+                                        <span class="text-[11px] text-itm-muted">Assist organizing committee with crowd &amp; logistics.</span>
                                     </label>
-                                    <label class="relative flex flex-col p-4 bg-white border-2 border-slate-200 rounded-xl cursor-pointer hover:border-brand-500 transition has-[:checked]:border-brand-600 has-[:checked]:bg-brand-50/30">
+                                    <label class="relative flex flex-col p-4 bg-white border-2 border-slate-200 rounded-lg cursor-pointer hover:border-itm-primary transition has-[:checked]:border-itm-primary has-[:checked]:bg-itm-tutu/50">
                                         <input type="radio" name="role" value="VIEWER" class="sr-only">
-                                        <span class="font-bold text-xs text-slate-900 mb-1">Audience / Viewer</span>
-                                        <span class="text-[11px] text-slate-500">Spectator attendance without workshop deliverables.</span>
+                                        <span class="font-bold text-xs text-[#212529] mb-1">Audience / Viewer</span>
+                                        <span class="text-[11px] text-itm-muted">Spectator attendance without workshop deliverables.</span>
                                     </label>
                                 </div>
                             </div>
 
                             <div class="flex items-center justify-between pt-2">
-                                <span class="text-[11px] text-slate-500 italic">
+                                <span class="text-[11px] text-itm-muted italic">
                                     <i class="fa-solid fa-lock mr-1"></i>One registration only per student
                                 </span>
-                                <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-extrabold rounded-xl shadow-md transition flex items-center">
+                                <button type="submit" class="px-6 py-2.5 bg-itm-primary hover:bg-itm-dark text-white text-xs font-bold rounded-lg shadow-xs transition flex items-center">
                                     <i class="fa-solid fa-paper-plane mr-2"></i>Confirm Registration
                                 </button>
                             </div>

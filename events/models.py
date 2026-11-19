@@ -159,11 +159,7 @@ class EventProposal(models.Model):
         base_tok = str(self.qr_checkin_token)
         secret = str(self.qr_rotation_secret)
 
-        # Fallback exact static token check
-        if token_string == base_tok:
-            return True, "Valid token"
-
-        parts = token_string.split('_')
+        parts = token_string.rsplit('_', 2)
         if len(parts) != 3:
             return False, "Invalid QR code format."
 
@@ -237,7 +233,7 @@ class EventProposal(models.Model):
         elif current_role == 'HOD_MECH':
             return user.username == 'hod_mech' or (user_role == 'HOD' and ('Mechanical' in user.profile.department or 'Mech' in user.profile.department))
         elif current_role == 'HOD':
-            return (user_role == 'HOD' and (self.organizing_unit.head == user or self.organizing_unit.unit_type == 'DEPARTMENT'))
+            return user_role == 'HOD' and self.organizing_unit.head == user
         elif current_role in ['CLUB_HEAD', 'CLUB_ROBOTICS']:
             return user.username in ['club_lead', 'club_cultural'] or (user_role in ['CLUB_HEAD', 'FACULTY'] and (self.organizing_unit.head == user or self.organizing_unit.unit_type == 'CLUB'))
         elif current_role == 'CLUB_CULTURAL':
@@ -341,6 +337,9 @@ class LogisticsNotification(models.Model):
     subject = models.CharField(max_length=255)
     body = models.TextField()
     sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('proposal', 'logistics_type')
 
     def __str__(self):
         return f"{self.get_logistics_type_display()} - {self.proposal.title}"

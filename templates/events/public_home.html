@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Campus Events & Symposia - INSTITUTE OF TECHNOLOGY AND MANAGEMENT - CONNECTIFYU{% endblock %}
+
+{% block content %}
+<div class="space-y-10 py-2">
+
+    <!-- Hero Institutional Banner (ITM GOI LMS Style) -->
+    <div class="relative overflow-hidden bg-gradient-to-br from-itm-dark via-[#144943] to-itm-primary rounded-2xl text-white p-8 sm:p-12 shadow-md border border-itm-border/30">
+        <!-- Background subtle glow elements -->
+        <div class="absolute -right-16 -bottom-16 w-80 h-80 rounded-full bg-itm-secondary/20 blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-16 -top-16 w-80 h-80 rounded-full bg-itm-tutu/10 blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 max-w-3xl space-y-4">
+            <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold text-amber-300">
+                <i class="fa-solid fa-graduation-cap"></i>
+                <span>INSTITUTE OF TECHNOLOGY AND MANAGEMENT &bull; GWALIOR</span>
+            </div>
+
+            <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
+                CONNECTIFYU <br class="hidden sm:inline">
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-itm-tutu via-white to-amber-300">
+                    Campus Events &amp; Symposia
+                </span>
+            </h1>
+
+            <p class="text-sm sm:text-base text-itm-tutu/90 leading-relaxed max-w-2xl">
+                Discover upcoming technical conferences, national workshops, hackathons, and cultural conclaves across all departments of ITM Gwalior.
+            </p>
+
+            <div class="flex flex-wrap items-center gap-3 pt-2">
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'login' %}" class="inline-flex items-center space-x-2 px-6 py-3 rounded-lg text-xs sm:text-sm font-black text-slate-950 bg-amber-400 hover:bg-amber-300 shadow-md shadow-amber-400/20 transition transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-right-to-bracket"></i>
+                        <span>Sign In to Register for Events</span>
+                    </a>
+                {% else %}
+                    <a href="{% url 'dashboard' %}" class="inline-flex items-center space-x-2 px-6 py-3 rounded-lg text-xs sm:text-sm font-black text-slate-950 bg-amber-400 hover:bg-amber-300 shadow-md shadow-amber-400/20 transition transform hover:-translate-y-0.5">
+                        <i class="fa-solid fa-table-columns"></i>
+                        <span>Go to My Dashboard ({{ user.first_name|default:user.username }})</span>
+                    </a>
+                {% endif %}
+                <a href="#eventsSection" class="inline-flex items-center space-x-2 px-5 py-3 rounded-lg text-xs sm:text-sm font-bold text-white bg-white/10 hover:bg-white/20 border border-white/20 transition">
+                    <span>Explore Published Events</span>
+                    <i class="fa-solid fa-arrow-down text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events Feed Section (Requirement 2) -->
+    <div id="eventsSection" class="space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-itm-snuff pb-4">
+            <div>
+                <h2 class="text-2xl font-black text-[#212529]">Upcoming Events &amp; Workshops</h2>
+                <p class="text-xs text-itm-muted mt-0.5">
+                    Institutionally approved and cleared events. Enrolled students must sign in to confirm their registration.
+                </p>
+            </div>
+            <a href="{% url 'login' %}" class="inline-flex items-center text-xs font-bold text-itm-primary hover:text-itm-dark transition">
+                <span>Already registered? Sign in to check-in</span>
+                <i class="fa-solid fa-arrow-right ml-1.5 text-[10px]"></i>
+            </a>
+        </div>
+
+        <!-- Grid of Events with Minimal Description (styled as ITM LMS .fp-coursebox) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for event in events %}
+                <div class="bg-white rounded-xl border border-itm-snuff shadow-xs overflow-hidden flex flex-col hover:shadow-md hover:border-itm-primary transition group">
+                    
+                    <!-- Event Poster Thumbnail / Banner -->
+                    <div class="relative h-44 w-full bg-slate-900 overflow-hidden">
+                        {% if event.poster_image %}
+                            <img src="{{ event.poster_image.url }}" alt="{{ event.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        {% elif event.poster_data_uri %}
+                            <img src="{{ event.poster_data_uri }}" alt="{{ event.title }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        {% else %}
+                            <div class="w-full h-full bg-gradient-to-tr from-itm-dark via-[#134944] to-itm-primary flex flex-col items-center justify-center text-white/70 p-4 text-center">
+                                <i class="fa-solid fa-building-columns text-3xl mb-1 text-amber-300"></i>
+                                <span class="text-[10px] font-bold uppercase tracking-widest text-itm-tutu">{{ event.organizing_unit.name }}</span>
+                            </div>
+                        {% endif %}
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider bg-white/95 text-itm-dark shadow-xs backdrop-blur-xs">
+                                {{ event.organizing_unit.name|truncatechars:28 }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Card Body: Minimal Description & Key Metadata -->
+                    <div class="p-5 flex-grow space-y-3">
+                        <h3 class="font-bold text-base text-[#212529] group-hover:text-itm-primary transition leading-snug line-clamp-2">
+                            {{ event.title }}
+                        </h3>
+
+                        <!-- Minimal Description -->
+                        <p class="text-xs text-itm-muted line-clamp-2 leading-relaxed">
+                            {{ event.description|truncatewords:24 }}
+                        </p>
+
+                        <!-- Key Event Parameters -->
+                        <div class="space-y-1.5 pt-2 border-t border-slate-100 text-xs text-[#313131]">
+                            {% if event.guest_speaker %}
+                                <div class="flex items-center text-slate-700">
+                                    <i class="fa-solid fa-chalkboard-user w-4 text-itm-primary mr-2 text-[11px]"></i>
+                                    <span class="truncate">Keynote: <strong class="text-slate-900">{{ event.guest_speaker }}</strong></span>
+                                </div>
+                            {% endif %}
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-calendar w-4 text-itm-secondary mr-2 text-[11px]"></i>
+                                <span>{{ event.start_date|date:"D, M d, Y" }} &bull; {{ event.start_date|date:"h:i A" }}</span>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="fa-solid fa-location-dot w-4 text-rose-500 mr-2 text-[11px]"></i>
+                                <span class="truncate">{{ event.venue }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Footer: Requirement 2 Action (Registration requires sign in) -->
+                    <div class="p-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <a href="{% url 'event_public_detail' event.id %}" class="px-3 py-1.5 text-xs font-bold text-itm-muted hover:text-itm-dark hover:bg-slate-200/60 rounded-lg transition">
+                            Details
+                        </a>
+
+                        {% if not user.is_authenticated %}
+                            <a href="{% url 'login' %}?next={% url 'event_public_detail' event.id %}" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-itm-primary hover:bg-itm-dark text-white font-bold text-xs rounded-lg shadow-xs transition whitespace-nowrap">
+                                <i class="fa-solid fa-right-to-bracket text-[10px]"></i>
+                                <span>Sign In to Register</span>
+                            </a>
+                        {% elif user.profile.role == 'STUDENT' %}
+                            <a href="{% url 'event_public_detail' event.id %}" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-itm-primary hover:bg-itm-dark text-white font-bold text-xs rounded-lg shadow-xs transition whitespace-nowrap">
+                                <i class="fa-solid fa-id-card text-[10px]"></i>
+                                <span>Register / Details</span>
+                            </a>
+                        {% else %}
+                            <a href="{% url 'event_public_detail' event.id %}" class="inline-flex items-center space-x-1.5 px-4 py-2 bg-itm-primary hover:bg-itm-dark text-white font-bold text-xs rounded-lg shadow-xs transition whitespace-nowrap">
+                                <i class="fa-solid fa-eye text-[10px]"></i>
+                                <span>View Event</span>
+                            </a>
+                        {% endif %}
+                    </div>
+
+                </div>
+            {% empty %}
+                <div class="col-span-full bg-white p-12 rounded-xl border border-dashed border-itm-snuff text-center space-y-2">
+                    <i class="fa-solid fa-calendar-xmark text-slate-300 text-4xl mb-1"></i>
+                    <h3 class="text-base font-bold text-slate-800">No events currently scheduled</h3>
+                    <p class="text-xs text-slate-500 max-w-sm mx-auto">
+                        New academic conferences and student activities will appear here once approved by the Directorate.
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Institutional Highlights Feature Strip (ITM LMS Accent Style) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+        <div class="bg-white p-6 rounded-xl border border-itm-snuff shadow-xs space-y-2">
+            <div class="w-10 h-10 rounded-lg bg-itm-tutu text-itm-primary flex items-center justify-center text-lg font-bold">
+                <i class="fa-solid fa-timeline"></i>
+            </div>
+            <h4 class="font-bold text-sm text-[#212529]">5-Stage Approval Hierarchy</h4>
+            <p class="text-xs text-itm-muted leading-relaxed">
+                Seamless multi-stage approval from Department HOD, Dean of Research, Dean of Finance, Dean of Academics, to Director.
+            </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-itm-snuff shadow-xs space-y-2">
+            <div class="w-10 h-10 rounded-lg bg-itm-tutu text-itm-primary flex items-center justify-center text-lg font-bold">
+                <i class="fa-solid fa-qrcode"></i>
+            </div>
+            <h4 class="font-bold text-sm text-[#212529]">Anti-Proxy Rotating Attendance</h4>
+            <p class="text-xs text-itm-muted leading-relaxed">
+                Projected live QR codes rotate dynamically every 20 seconds paired with front-camera selfie validation and feedback confirmation.
+            </p>
+        </div>
+
+        <div class="bg-white p-6 rounded-xl border border-itm-snuff shadow-xs space-y-2">
+            <div class="w-10 h-10 rounded-lg bg-itm-tutu text-itm-primary flex items-center justify-center text-lg font-bold">
+                <i class="fa-solid fa-truck-ramp-box"></i>
+            </div>
+            <h4 class="font-bold text-sm text-[#212529]">Automated Logistics Dispatch</h4>
+            <p class="text-xs text-itm-muted leading-relaxed">
+                Automatic coordination with Hostel Mess, Transport Fleet, and Auditorium AV upon Director executive clearance.
+            </p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

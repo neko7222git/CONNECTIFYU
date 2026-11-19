@@ -1,154 +1,138 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Sign In - College Event Management System (CEMS India){% endblock %}
+{% block title %}Sign In - INSTITUTE OF TECHNOLOGY AND MANAGEMENT - CONNECTIFYU{% endblock %}
 
 {% block content %}
-<div class="max-w-5xl mx-auto py-8">
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
+<div class="min-h-[calc(100vh-240px)] flex flex-col items-center justify-center py-6 px-4">
+
+    <!-- Perfectly Centered Login Container (Requirement 3) -->
+    <div class="w-full {% if demo_accounts %}max-w-4xl{% else %}max-w-md{% endif %}">
         
-        <!-- Standard Login Form -->
-        <div class="md:col-span-5 bg-white p-8 rounded-3xl border border-slate-200 shadow-md">
-            <div class="mb-6">
-                <div class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wider mb-2">
-                    <i class="fa-solid fa-building-columns text-brand-600"></i>
-                    <span>Institutional Portal</span>
-                </div>
-                <h1 class="text-2xl font-black text-slate-900">Sign In to CEMS</h1>
-                <p class="text-xs text-slate-500 mt-1">College Event Management & Approval System</p>
-            </div>
-
-            <form method="POST" action="{% url 'login' %}" class="space-y-4">
-                {% csrf_token %}
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Username / Roll No</label>
-                    <input type="text" name="username" required 
-                           class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition" 
-                           placeholder="e.g. faculty, hod_cse, or student1">
-                </div>
-
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">Password</label>
-                    <input type="password" name="password" required 
-                           class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white focus:outline-none transition"
-                           placeholder="••••••••">
-                    <p class="text-[11px] text-slate-400 mt-1">Universal demo password: <code class="text-brand-600 font-mono font-bold">password123</code></p>
-                </div>
-
-                <button type="submit" class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-sm shadow-md shadow-brand-500/25 transition">
-                    Sign In
-                </button>
-            </form>
-
-            <div class="mt-6 pt-6 border-t border-slate-200 text-xs text-slate-500 space-y-1">
-                <div class="font-bold text-slate-700 flex items-center">
-                    <i class="fa-solid fa-shield-halved text-emerald-600 mr-1.5"></i>No Self-Registration
-                </div>
-                <p class="text-[11px] leading-relaxed text-slate-500">
-                    Accounts are pre-provisioned in the institutional database. Superadmin can update users via <a href="/admin/" target="_blank" class="font-bold text-brand-600 hover:underline">Admin Portal</a>.
-                </p>
-            </div>
-        </div>
-
-        <!-- Pre-provisioned Indian Demo Personas Grid -->
-        <div class="md:col-span-7 bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 text-white p-8 rounded-3xl shadow-xl border border-indigo-800">
-            <div class="flex items-center justify-between mb-2">
-                <div class="flex items-center space-x-2">
-                    <span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 font-extrabold text-[10px] rounded uppercase tracking-wider">
-                        One-Click Switcher
-                    </span>
-                    <span class="text-xs text-indigo-200 font-medium">Defaults directly to Dashboard</span>
-                </div>
-                <a href="{% url 'switch_user' 'admin' %}" class="px-2.5 py-1 bg-rose-600/80 hover:bg-rose-600 text-white text-[11px] font-bold rounded-lg transition border border-rose-400/40">
-                    <i class="fa-solid fa-lock mr-1"></i>Superadmin (admin)
-                </a>
-            </div>
+        <div class="{% if demo_accounts %}grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch{% else %}flex justify-center{% endif %}">
             
-            <h2 class="text-xl font-bold mb-3 text-white">Pre-Provisioned Institutional Database</h2>
-            <p class="text-xs text-indigo-200/80 mb-5 leading-relaxed">
-                Test the distinct department approval chains, rotating dynamic QR, and faculty poster publication. Click any persona below:
-            </p>
-
-            <div class="space-y-4">
-                <!-- HODs of Different Departments -->
-                <div>
-                    <div class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider mb-2">1. Department HODs & Faculty</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <a href="{% url 'switch_user' 'hod_cse' %}" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition block">
-                            <div class="text-xs font-bold text-white">Dr. K. V. Ramanathan</div>
-                            <div class="text-[10px] text-amber-300">HOD (CSE Dept)</div>
-                        </a>
-                        <a href="{% url 'switch_user' 'hod_ece' %}" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition block">
-                            <div class="text-xs font-bold text-white">Dr. Sunita Kulkarni</div>
-                            <div class="text-[10px] text-amber-300">HOD (ECE Dept)</div>
-                        </a>
-                        <a href="{% url 'switch_user' 'hod_mech' %}" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition block">
-                            <div class="text-xs font-bold text-white">Dr. V. Rathore</div>
-                            <div class="text-[10px] text-amber-300">HOD (Mech Dept)</div>
-                        </a>
+            <!-- Centered Main Login Box -->
+            <div class="{% if demo_accounts %}md:col-span-6{% else %}w-full max-w-md{% endif %} bg-white p-8 sm:p-10 rounded-2xl border border-itm-snuff shadow-md space-y-6">
+                
+                <!-- Institutional Branding & Logo (Requirement 1) -->
+                <div class="text-center space-y-2">
+                    <img src="{% static 'img/itm_logo.png' %}" alt="Institute of Technology and Management Logo" class="h-16 mx-auto object-contain">
+                    <div>
+                        <h2 class="text-xs font-black text-[#212529] uppercase tracking-wider">
+                            INSTITUTE OF TECHNOLOGY AND MANAGEMENT
+                        </h2>
+                        <p class="text-[10px] font-bold text-itm-primary tracking-widest uppercase">
+                            GWALIOR &bull; MP &bull; INDIA
+                        </p>
+                    </div>
+                    <div class="pt-2">
+                        <h1 class="text-2xl font-black text-[#212529]">Sign In</h1>
+                        <p class="text-xs text-itm-muted mt-0.5">CONNECTIFYU &bull; Campus Event Management Portal</p>
                     </div>
                 </div>
 
-                <!-- Proposers -->
-                <div>
-                    <div class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider mb-2">2. Proposers & Faculty Advisors</div>
-                    <div class="grid grid-cols-2 gap-2">
-                        <a href="{% url 'switch_user' 'faculty' %}" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition flex items-center space-x-2">
-                            <div class="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white text-xs"><i class="fa-solid fa-chalkboard-user"></i></div>
-                            <div>
-                                <div class="text-xs font-bold text-white">Prof. Rajesh Sharma</div>
-                                <div class="text-[10px] text-indigo-200">Faculty Coordinator (CSE)</div>
-                            </div>
-                        </a>
-                        <a href="{% url 'switch_user' 'club_lead' %}" class="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition flex items-center space-x-2">
-                            <div class="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center text-white text-xs"><i class="fa-solid fa-robot"></i></div>
-                            <div>
-                                <div class="text-xs font-bold text-white">Prof. Priya Nair</div>
-                                <div class="text-[10px] text-indigo-200">Robotics Club Advisor</div>
-                            </div>
-                        </a>
+                <!-- Login Form -->
+                <form method="POST" action="{% url 'login' %}" class="space-y-4">
+                    {% csrf_token %}
+                    {% if next %}
+                        <input type="hidden" name="next" value="{{ next }}">
+                    {% endif %}
+
+                    <div>
+                        <label class="block text-xs font-bold text-[#313131] uppercase tracking-wider mb-1.5">
+                            Username / Roll No
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-user text-xs"></i>
+                            </span>
+                            <input type="text" name="username" required autofocus
+                                   class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-itm-primary/30 focus:border-itm-primary focus:bg-white focus:outline-none transition font-medium" 
+                                   placeholder="e.g. admin, faculty, or 21BCSE101">
+                        </div>
                     </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-[#313131] uppercase tracking-wider mb-1.5">
+                            Password
+                        </label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                <i class="fa-solid fa-lock text-xs"></i>
+                            </span>
+                            <input type="password" name="password" required 
+                                   class="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-itm-primary/30 focus:border-itm-primary focus:bg-white focus:outline-none transition font-medium"
+                                   placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 px-4 bg-itm-primary hover:bg-itm-dark text-white font-bold rounded-lg text-sm shadow-sm transition transform hover:-translate-y-0.5 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-right-to-bracket text-xs"></i>
+                        <span>Sign In to Account</span>
+                    </button>
+                </form>
+
+                <!-- Authentication Security Note -->
+                <div class="pt-4 border-t border-itm-tutu text-center space-y-1">
+                    <p class="text-[11px] text-itm-muted flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved text-itm-primary mr-1.5"></i>
+                        Pre-provisioned Institutional Credentials
+                    </p>
+                    <p class="text-[10px] text-itm-muted">
+                        Default testing password for all pre-seeded accounts: <code class="font-mono text-itm-primary font-bold">password123</code>
+                    </p>
                 </div>
 
-                <!-- Statutory Deans & Director -->
-                <div>
-                    <div class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider mb-2">3. Statutory Deans & Executive Directorate</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        <a href="{% url 'switch_user' 'dean_finance' %}" class="p-2.5 bg-purple-500/20 hover:bg-purple-500/30 rounded-xl border border-purple-400/30 transition block">
-                            <div class="text-xs font-bold text-white">Dr. Suresh Chandra</div>
-                            <div class="text-[10px] text-purple-200 font-semibold">Dean (Finance)*</div>
-                        </a>
-                        <a href="{% url 'switch_user' 'dean_academics' %}" class="p-2.5 bg-purple-500/20 hover:bg-purple-500/30 rounded-xl border border-purple-400/30 transition block">
-                            <div class="text-xs font-bold text-white">Dr. M. Sundaram</div>
-                            <div class="text-[10px] text-purple-200 font-semibold">Dean (Academics)*</div>
-                        </a>
-                        <a href="{% url 'switch_user' 'director' %}" class="p-2.5 bg-emerald-500/20 hover:bg-emerald-500/30 rounded-xl border border-emerald-400/30 transition block">
-                            <div class="text-xs font-bold text-white">Dr. R. Chidambaram</div>
-                            <div class="text-[10px] text-emerald-200 font-semibold">Director (Executive)*</div>
-                        </a>
-                    </div>
+                <!-- Back to Public Events Feed (Requirement 2) -->
+                <div class="text-center pt-1">
+                    <a href="{% url 'dashboard' %}" class="inline-flex items-center text-xs font-bold text-itm-muted hover:text-itm-primary transition">
+                        <i class="fa-solid fa-arrow-left mr-1.5 text-[10px]"></i>
+                        <span>Explore Public Campus Events</span>
+                    </a>
                 </div>
 
-                <!-- Students -->
-                <div>
-                    <div class="text-[11px] font-bold text-indigo-300 uppercase tracking-wider mb-2">4. Pre-Enrolled Students (Rotating QR Check-In)</div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <a href="{% url 'switch_user' 'student1' %}" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition block text-center">
-                            <div class="text-xs font-bold text-white">Aarav Patel</div>
-                            <div class="text-[10px] text-indigo-200">21BCSE101</div>
-                        </a>
-                        <a href="{% url 'switch_user' 'student2' %}" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition block text-center">
-                            <div class="text-xs font-bold text-white">Ananya Sen</div>
-                            <div class="text-[10px] text-indigo-200">21BECE034</div>
-                        </a>
-                        <a href="{% url 'switch_user' 'student3' %}" class="p-2 bg-white/10 hover:bg-white/20 rounded-xl border border-white/10 transition block text-center">
-                            <div class="text-xs font-bold text-white">Rohan Gupta</div>
-                            <div class="text-[10px] text-indigo-200">22BMEE012</div>
-                        </a>
-                    </div>
-                </div>
             </div>
+
+            <!-- Demo Persona Switcher (Only visible when active superadmin session in DEBUG) -->
+            {% if demo_accounts %}
+                <div class="md:col-span-6 bg-gradient-to-br from-itm-dark via-[#134944] to-itm-primary text-white p-8 rounded-2xl shadow-md border border-itm-border/40 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-2.5 py-0.5 bg-amber-400 text-slate-950 font-black text-[10px] rounded uppercase tracking-wider">
+                                Superadmin Fast-Switch
+                            </span>
+                            <span class="text-[11px] text-itm-tutu font-medium">Presentation Sandbox</span>
+                        </div>
+
+                        <h3 class="text-lg font-black text-white">Active Superadmin Session</h3>
+                        <p class="text-xs text-itm-tutu mt-1 mb-4 leading-relaxed">
+                            Select any persona below to switch views directly without losing superadmin access:
+                        </p>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            {% for acct in demo_accounts %}
+                                <a href="{% url 'switch_user' acct.username %}" 
+                                   class="flex items-center justify-between p-2.5 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 transition group">
+                                    <div class="truncate mr-2">
+                                        <div class="font-bold text-white group-hover:text-amber-300 transition truncate">{{ acct.name }}</div>
+                                        <div class="text-[10px] text-itm-tutu/80 truncate">{{ acct.label }}</div>
+                                    </div>
+                                    <i class="fa-solid fa-arrow-right-to-bracket text-xs text-itm-border group-hover:text-amber-400 transition shrink-0"></i>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="pt-4 mt-4 border-t border-white/15 text-[11px] text-itm-tutu/80 text-center flex items-center justify-between">
+                        <span>Institution: ITM Gwalior</span>
+                        <span class="text-amber-300 font-bold">&ldquo;THINK BIG... THINK BEYOND&rdquo;</span>
+                    </div>
+                </div>
+            {% endif %}
+
         </div>
 
     </div>
+
 </div>
 {% endblock %}
