@@ -194,7 +194,7 @@ def register_student_view(request):
 
         login(request, user)
         messages.success(request, f"Namaste {first_name}! Welcome to the College Event Management System.")
-        return redirect('dashboard')
+        return redirect('home')
 
     return render(request, 'registration/register.html', {'allowed_domains': allowed_domains})
 
@@ -280,7 +280,7 @@ def create_proposal_view(request):
     profile = getattr(request.user, 'profile', None)
     if not profile or profile.role == 'STUDENT':
         messages.error(request, "Access Denied: Students are not authorized to propose or publish college events.")
-        return redirect('dashboard')
+        return redirect('home')
 
     units = OrganizingUnit.objects.all().order_by('name')
 
