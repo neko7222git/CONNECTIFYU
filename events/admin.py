@@ -2,8 +2,9 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from .models import (
-    UserProfile, OrganizingUnit, EventProposal,
-    ApprovalLog, EventRegistration, EventFeedback, LogisticsNotification
+    RollWhitelist, StudentProfile, StaffProfile, UserProfile,
+    OrganizingUnit, EventProposal, ApprovalLog, EventRegistration,
+    EventFeedback, LogisticsNotification
 )
 
 
@@ -33,6 +34,32 @@ class UserAdmin(BaseUserAdmin):
 
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+
+@admin.register(RollWhitelist)
+class RollWhitelistAdmin(admin.ModelAdmin):
+    list_display = ('roll_number', 'name', 'department', 'year', 'is_used')
+    list_filter = ('year', 'is_used', 'department')
+    search_fields = ('roll_number', 'name', 'department')
+    actions = ['mark_as_unused']
+
+    @admin.action(description="Mark selected entries as unused")
+    def mark_as_unused(self, request, queryset):
+        queryset.update(is_used=False)
+
+
+@admin.register(StudentProfile)
+class StudentProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'roll_number', 'department', 'year', 'phone')
+    list_filter = ('year', 'department')
+    search_fields = ('roll_number', 'user__username', 'user__first_name', 'user__last_name', 'department')
+
+
+@admin.register(StaffProfile)
+class StaffProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'designation', 'organizing_unit')
+    list_filter = ('organizing_unit',)
+    search_fields = ('user__username', 'user__first_name', 'user__last_name', 'designation')
 
 
 @admin.register(UserProfile)

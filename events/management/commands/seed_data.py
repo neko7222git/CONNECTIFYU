@@ -3,8 +3,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import timedelta
 from events.models import (
-    UserProfile, OrganizingUnit, EventProposal,
-    ApprovalLog, EventRegistration, EventFeedback, LogisticsNotification
+    UserProfile, OrganizingUnit, EventProposal, ApprovalLog, EventRegistration,
+    EventFeedback, LogisticsNotification, RollWhitelist, StudentProfile, StaffProfile,
 )
 from events.utils import get_default_chain, dispatch_logistics_notifications
 
@@ -80,7 +80,37 @@ class Command(BaseCommand):
             profile.phone = '+91 98765 43210'
             profile.save()
 
+            # Seed StudentProfile or StaffProfile
+            if role == 'STUDENT':
+                StudentProfile.objects.get_or_create(
+                    user=user,
+                    defaults={'roll_number': roll_or_emp, 'department': dept, 'year': 1}
+                )
+                # Seed whitelist entry as USED
+                RollWhitelist.objects.get_or_create(
+                    roll_number=roll_or_emp,
+                    defaults={'name': f"{first} {last}", 'department': dept, 'year': 1, 'is_used': True}
+                )
+            else:
+                StaffProfile.objects.get_or_create(
+                    user=user,
+                    defaults={'designation': f"{role} — {dept}"}
+                )
+
             created_users[username] = user
+
+        # 1b. Seed some UNUSED roll numbers in whitelist for testing fresh student signup
+        demo_whitelist = [
+            ('22BCSE045', 'Rohan Gupta', 'Computer Science & Engineering', 2),
+            ('22BECE012', 'Pooja Verma', 'Electronics & Communication', 2),
+            ('23BMECH08', 'Karan Mehra', 'Mechanical Engineering', 1),
+            ('23BCIVIL03', 'Sneha Roy', 'Civil Engineering', 1),
+        ]
+        for roll, name, dept, year in demo_whitelist:
+            RollWhitelist.objects.get_or_create(
+                roll_number=roll,
+                defaults={'name': name, 'department': dept, 'year': year, 'is_used': False}
+            )
 
         # 3. Organizing Units mapped to specific HODs
         cse_dept, _ = OrganizingUnit.objects.get_or_create(

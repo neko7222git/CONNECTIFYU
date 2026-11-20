@@ -22,10 +22,27 @@ from django.http import JsonResponse, HttpResponseForbidden, Http404
 
 from .models import (
     UserProfile, OrganizingUnit, EventProposal,
-    ApprovalLog, EventRegistration, EventFeedback, LogisticsNotification
+    ApprovalLog, EventRegistration, EventFeedback, LogisticsNotification,
+    RollWhitelist, StudentProfile, StaffProfile,
 )
 from .utils import generate_qr_base64, dispatch_logistics_notifications, get_default_chain
 
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def _get_user_role(user):
+    """Return role string from UserProfile, or None."""
+    return getattr(getattr(user, 'profile', None), 'role', None)
+
+
+def _is_student(user):
+    """True if the authenticated user is a student (is_staff=False or role=STUDENT)."""
+    if not user.is_authenticated:
+        return False
+    return not user.is_staff or _get_user_role(user) == 'STUDENT'
+
+
+# ── Auth Views ────────────────────────────────────────────────────────────────
 
 def login_view(request):
     if request.user.is_authenticated:
@@ -91,11 +108,95 @@ def switch_user_view(request, username):
 
 def register_student_view(request):
     """
-    Public student self-registration is disabled.
-    All student accounts are pre-provisioned in the institutional database.
+    Student registration with email domain validation and roll number whitelist check.
+    All accounts are validated against the institutional database.
     """
-    messages.warning(request, "Public self-registration is disabled. All student and faculty accounts are pre-provisioned by College IT Administration.")
-    return redirect('login')
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+    allowed_domains = getattr(settings, 'ALLOWED_EMAIL_DOMAINS', ['college.ac.in'])
+
+    if request.method == 'POST':
+        username   = request.POST.get('username', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name  = request.POST.get('last_name', '').strip()
+        email      = request.POST.get('email', '').strip().lower()
+        roll_no    = request.POST.get('roll_no', '').strip().upper()
+        department = request.POST.get('department', '').strip()
+        year       = int(request.POST.get('year', 1))
+        password   = request.POST.get('password', '')
+
+        # ── Validation ────────────────────────────────────────────────────────
+
+        # 1. Email domain check (server-side — cannot be bypassed by JS)
+        email_domain = email.split('@')[-1] if '@' in email else ''
+        if email_domain not in allowed_domains:
+            messages.error(
+                request,
+                f"Invalid email domain '@{email_domain}'. "
+                f"Only {', '.join(f'@{d}' for d in allowed_domains)} email addresses are allowed."
+            )
+            return render(request, 'registration/register.html', {'allowed_domains': allowed_domains})
+
+        # 2. Roll number whitelist check
+        whitelist_entry = RollWhitelist.objects.filter(roll_number=roll_no).first()
+        if not whitelist_entry:
+            messages.error(request, f"Roll number '{roll_no}' is not in the admission whitelist. Contact the administrator.")
+            return render(request, 'registration/register.html', {'allowed_domains': allowed_domains})
+
+        if whitelist_entry.is_used:
+            messages.error(request, f"Roll number '{roll_no}' has already been used to create an account. Contact admin if this is an error.")
+            return render(request, 'registration/register.html', {'allowed_domains': allowed_domains})
+
+        # 3. Username / email uniqueness
+        if User.objects.filter(username=username).exists():
+            messages.error(request, "This username is already taken. Please choose another.")
+            return render(request, 'registration/register.html', {'allowed_domains': allowed_domains})
+
+        if User.objects.filter(email=email).exists():
+            messages.error(request, "An account with this email already exists.")
+            return render(request, 'registration/register.html', {'allowed_domains': allowed_domains})
+
+        # 4. Roll number uniqueness in StudentProfile
+        if StudentProfile.objects.filter(roll_number=roll_no).exists():
+            messages.error(request, f"Roll number '{roll_no}' is already registered. Contact admin.")
+            return render(request, 'registration/register.html', {'allowed_domains': allowed_domains})
+
+        # ── Create Account ────────────────────────────────────────────────────
+        user = User.objects.create_user(
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            email=email,
+            password=password,
+            is_staff=False,  # Students are never staff
+        )
+
+        # Legacy UserProfile (keeps existing approval logic working)
+        UserProfile.objects.create(
+            user=user,
+            role='STUDENT',
+            department=department,
+            roll_or_emp_id=roll_no,
+        )
+
+        # New StudentProfile
+        StudentProfile.objects.create(
+            user=user,
+            roll_number=roll_no,
+            department=department,
+            year=year,
+        )
+
+        # Mark whitelist entry as consumed
+        whitelist_entry.is_used = True
+        whitelist_entry.save()
+
+        login(request, user)
+        messages.success(request, f"Namaste {first_name}! Welcome to the College Event Management System.")
+        return redirect('dashboard')
+
+    return render(request, 'registration/register.html', {'allowed_domains': allowed_domains})
 
 
 def public_home_view(request):
@@ -120,8 +221,11 @@ def dashboard_view(request):
     profile = getattr(user, 'profile', None)
     role = profile.role if profile else 'STUDENT'
 
+    # G5: use is_staff as the authoritative routing gate
+    is_student_user = not user.is_staff or role == 'STUDENT'
+
     # --- 1. DEDICATED STUDENT DASHBOARD ---
-    if role == 'STUDENT':
+    if is_student_user:
         registrations = EventRegistration.objects.filter(student=user).select_related('event', 'event__organizing_unit').order_by('-registered_at')
         verified_count = registrations.filter(status='VERIFIED').count()
         checked_in_count = registrations.filter(status='CHECKED_IN').count()
@@ -566,6 +670,10 @@ def process_approval_view(request, proposal_id):
             remarks=remarks,
             revision_cycle=proposal.revision_count
         )
+
+        # G9: Email faculty proposer with the rejection remarks
+        _notify_proposer_revision(proposal, request.user, current_stage_title, remarks, action='revision')
+
         messages.warning(request, f"Proposal returned for revision to {proposal.proposer.get_full_name() or proposal.proposer.username}.")
 
     elif action == 'REJECT':
@@ -582,6 +690,10 @@ def process_approval_view(request, proposal_id):
             remarks=remarks,
             revision_cycle=proposal.revision_count
         )
+
+        # G9: Email faculty proposer with the rejection remarks
+        _notify_proposer_revision(proposal, request.user, current_stage_title, remarks, action='reject')
+
         messages.error(request, f"Proposal '{proposal.title}' was rejected.")
 
     else:
@@ -590,6 +702,36 @@ def process_approval_view(request, proposal_id):
         return redirect('proposal_detail', proposal_id=proposal_id)
 
     return redirect('proposal_detail', proposal_id=proposal_id)
+
+
+# ── G9: Notify proposer on reject/revision ───────────────────────────────────
+def _notify_proposer_revision(proposal, approver, stage_title, remarks, action):
+    """
+    Send email to the faculty proposer when their proposal is rejected or
+    returned for revision. Silently logs failure (never crashes the request).
+    """
+    from django.core.mail import send_mail
+    action_label = 'returned for Revision' if action == 'revision' else 'Rejected'
+    subject = f"[CEMS] Your Proposal '{proposal.title}' was {action_label}"
+    body = (
+        f"Dear {proposal.proposer.get_full_name() or proposal.proposer.username},\n\n"
+        f"Your event proposal \"{proposal.title}\" has been {action_label} at stage:\n"
+        f"  {stage_title}\n\n"
+        f"Remarks from {approver.get_full_name() or approver.username}:\n"
+        f"  {remarks}\n\n"
+        f"{'Please log in, address the remarks, and resubmit for review.' if action == 'revision' else 'Please contact your HOD/Dean if you believe this is an error.'}\n\n"
+        f"-- CEMS Automated Notification"
+    )
+    try:
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email='noreply-events@college.ac.in',
+            recipient_list=[proposal.proposer.email],
+            fail_silently=True,
+        )
+    except Exception:
+        pass  # Email failure must never crash the approval flow
 
 
 # --- Faculty Poster Upload & Final Publish View ---
@@ -678,46 +820,110 @@ def event_public_detail_view(request, proposal_id):
     return render(request, 'events/event_public_detail.html', context)
 
 
-# --- Student & Public Facing Event Views ---
+# ── Student & Public Facing Event Views ────────────────────────────────────────
 
 def student_events_view(request):
-    """Students, campus visitors, and entities browse approved & published events."""
-    published_events = EventProposal.objects.filter(status__in=['APPROVED', 'COMPLETED']).order_by('start_date')
+    """
+    Students, campus visitors, and entities browse approved events with multi-criteria search and filters:
+    - Text search (title, description, speaker, venue)
+    - Department / Organizing Unit filter
+    - Date timeframe (upcoming, past, all)
+    """
+    now = timezone.now()
+    events_qs = EventProposal.objects.filter(status__in=['APPROVED', 'COMPLETED']).select_related('organizing_unit')
 
+    # 1. Search Query
+    q = request.GET.get('q', '').strip()
+    if q:
+        events_qs = events_qs.filter(
+            Q(title__icontains=q) |
+            Q(description__icontains=q) |
+            Q(guest_speaker__icontains=q) |
+            Q(venue__icontains=q)
+        )
+
+    # 2. Organizing Unit Filter
+    unit_id = request.GET.get('unit', '').strip()
+    if unit_id:
+        events_qs = events_qs.filter(organizing_unit_id=unit_id)
+
+    # 3. Date Timeframe Filter
+    date_filter = request.GET.get('date', 'upcoming').strip()
+    if date_filter == 'upcoming':
+        events_qs = events_qs.filter(start_date__gte=now).order_by('start_date')
+    elif date_filter == 'past':
+        events_qs = events_qs.filter(start_date__lt=now).order_by('-start_date')
+    else:  # 'all'
+        events_qs = events_qs.order_by('-start_date')
+
+    # Mapping of user's active registrations
     user_registrations = {}
     if request.user.is_authenticated and hasattr(request.user, 'event_registrations'):
         for reg in request.user.event_registrations.all():
             user_registrations[reg.event_id] = reg
 
+    units = OrganizingUnit.objects.all().order_by('name')
+
     context = {
-        'events': published_events,
+        'events': events_qs,
         'user_registrations': user_registrations,
+        'units': units,
+        'selected_q': q,
+        'selected_unit': unit_id,
+        'selected_date': date_filter,
+        'total_count': events_qs.count(),
     }
     return render(request, 'events/student_events.html', context)
 
 
 @login_required
+def event_detail_view(request, proposal_id):
+    """
+    Phase B: Dedicated Event Detail Page for students and attendees.
+    - Non-staff students cannot access unpublished proposals (404/redirect).
+    - Displays full event agenda, venue, speaker profile, and interactive registration box.
+    """
+    proposal = get_object_or_404(EventProposal, id=proposal_id)
+
+    # Security: Unpublished events only viewable by staff or proposer
+    if proposal.status not in ['APPROVED', 'COMPLETED']:
+        is_staff_or_proposer = request.user.is_staff or proposal.proposer == request.user
+        if not is_staff_or_proposer:
+            messages.error(request, "Access Denied: This event is not yet published to students.")
+            return redirect('student_events')
+
+    user_reg = EventRegistration.objects.filter(event=proposal, student=request.user).first()
+    is_staff_user = request.user.is_staff and _get_user_role(request.user) != 'STUDENT'
+
+    context = {
+        'proposal': proposal,
+        'registration': user_reg,
+        'is_registered': user_reg is not None,
+        'is_staff_user': is_staff_user,
+        'role_choices': EventRegistration.ROLE_CHOICES,
+    }
+    return render(request, 'events/event_detail.html', context)
+
+
+@login_required
 def event_register_view(request, proposal_id):
     """
-    Fix #13 & #15:
+    Requirement 1 & Fix #13:
     - Atomic transaction + select_for_update to eliminate registration race conditions.
     - Capacity enforcement and end-date check.
     - Single registration constraint per student.
     """
-    proposal = get_object_or_404(EventProposal, id=proposal_id)
+    proposal = get_object_or_404(EventProposal, id=proposal_id, status__in=['APPROVED', 'COMPLETED'])
 
-    if proposal.status != 'APPROVED':
-        messages.error(request, "Event is not open for registration.")
-        return redirect('event_public_detail', proposal_id=proposal.id)
-
-    if proposal.end_date < timezone.now():
+    if proposal.end_date and proposal.end_date < timezone.now():
         messages.error(request, "Registration is closed - event has ended.")
         return redirect('event_public_detail', proposal_id=proposal.id)
 
     # Role check: only students register
-    if not hasattr(request.user, 'profile') or request.user.profile.role != 'STUDENT':
+    role_name = _get_user_role(request.user)
+    if role_name != 'STUDENT':
         messages.error(request, "Only students can register for events. Faculty and institutional heads can view details.")
-        return redirect('event_public_detail', proposal_id=proposal.id)
+        return redirect('event_detail', proposal_id=proposal.id)
 
     if request.method == 'POST':
         with transaction.atomic():
@@ -748,8 +954,32 @@ def event_register_view(request, proposal_id):
 
 
 @login_required
+def cancel_registration_view(request, proposal_id):
+    """
+    Phase B: Student can cancel their registration if they have not yet checked in.
+    """
+    if request.method == 'POST':
+        proposal = get_object_or_404(EventProposal, id=proposal_id)
+        reg = EventRegistration.objects.filter(event=proposal, student=request.user).first()
+
+        if not reg:
+            messages.warning(request, "You are not registered for this event.")
+            return redirect('event_public_detail', proposal_id=proposal.id)
+
+        if reg.status in ('CHECKED_IN', 'VERIFIED'):
+            messages.error(request, f"Cannot cancel registration because you have already {reg.get_status_display().lower()}.")
+            return redirect('event_public_detail', proposal_id=proposal.id)
+
+        reg.delete()
+        messages.success(request, f"Your registration for '{proposal.title}' has been successfully cancelled.")
+        return redirect('event_public_detail', proposal_id=proposal.id)
+
+    return redirect('event_public_detail', proposal_id=proposal.id)
+
+
+@login_required
 def my_registrations_view(request):
-    registrations = EventRegistration.objects.filter(student=request.user).order_by('-registered_at')
+    registrations = EventRegistration.objects.filter(student=request.user).select_related('event', 'event__organizing_unit').order_by('-registered_at')
     return render(request, 'events/my_registrations.html', {'registrations': registrations})
 
 
@@ -817,8 +1047,13 @@ def rotating_qr_api_view(request, proposal_id):
 def checkin_view(request):
     """
     Validates dynamic rotating QR token against expiration window.
-    Applies atomic transaction and select_for_update (Fix #13).
+    Applies atomic transaction, registered check, and anti-proxy selfie capture.
     """
+    # Staff/faculty should not be checking into events
+    if request.user.is_staff and _get_user_role(request.user) != 'STUDENT':
+        messages.error(request, "Staff members do not check in to events via QR.")
+        return redirect('dashboard')
+
     token = request.GET.get('token') or request.POST.get('token') or ''
     proposal = None
 
@@ -826,9 +1061,14 @@ def checkin_view(request):
         base_token = token.rsplit('_', 2)[0] if '_' in token else token
         proposal = EventProposal.objects.filter(qr_checkin_token=base_token).first()
 
+    if not proposal and token:
+        messages.error(request, "Invalid or expired QR code. Please scan the current QR code displayed on the projector.")
+        return render(request, 'events/checkin_selfie.html', {'proposal': None, 'token': ''})
+
     if request.method == 'POST':
         token = request.POST.get('token', '').strip()
-        selfie_b64 = request.POST.get('selfie_image', '')
+        selfie_file = request.FILES.get('selfie_image')
+        selfie_data = request.POST.get('selfie_image', '').strip()
 
         base_token = token.rsplit('_', 2)[0] if '_' in token else token
         proposal = get_object_or_404(EventProposal, qr_checkin_token=base_token)
@@ -839,17 +1079,41 @@ def checkin_view(request):
             return render(request, 'events/checkin_selfie.html', {'proposal': proposal, 'token': token, 'expired': True})
 
         with transaction.atomic():
-            reg, _ = EventRegistration.objects.select_for_update().get_or_create(
-                event=proposal,
-                student=request.user,
-                defaults={'role': 'PARTICIPANT', 'status': 'REGISTERED'}
-            )
+            # Must be registered for this event
+            reg = EventRegistration.objects.select_for_update().filter(event=proposal, student=request.user).first()
+            if not reg:
+                # Auto-register if configured, or check existing
+                reg, _ = EventRegistration.objects.select_for_update().get_or_create(
+                    event=proposal,
+                    student=request.user,
+                    defaults={'role': 'PARTICIPANT', 'status': 'REGISTERED'}
+                )
+
+            # Duplicate check-in block
+            if reg.status in ('CHECKED_IN', 'VERIFIED'):
+                messages.info(request, f"You have already checked in to '{proposal.title}'. Your attendance status is: {reg.get_status_display()}.")
+                if reg.status == 'CHECKED_IN' and not hasattr(reg, 'feedback'):
+                    return redirect('event_feedback', registration_id=reg.id)
+                return redirect('dashboard')
+
             reg.status = 'CHECKED_IN'
             reg.checked_in_at = timezone.now()
-            reg.selfie_image = selfie_b64
+            if selfie_file:
+                reg.selfie_image = selfie_file
+            elif selfie_data and selfie_data.startswith('data:image'):
+                try:
+                    import base64
+                    from django.core.files.base import ContentFile
+                    format_part, imgstr = selfie_data.split(';base64,')
+                    ext = format_part.split('/')[-1]
+                    reg.selfie_image = ContentFile(base64.b64decode(imgstr), name=f"selfie_{reg.id}_{timezone.now().strftime('%Y%m%d%H%M%S')}.{ext}")
+                except Exception:
+                    reg.selfie_image = selfie_data
+            elif selfie_data:
+                reg.selfie_image = selfie_data
             reg.save()
 
-        messages.success(request, f"Check-in verified via live selfie! Please complete the quick mandatory feedback below to verify your attendance.")
+        messages.success(request, "Check-in verified via live selfie! Please complete the quick mandatory feedback below to verify your attendance.")
         return redirect('event_feedback', registration_id=reg.id)
 
     context = {
